@@ -831,6 +831,10 @@ function resumeGame() {
 }
 
 function restartGame() {
+  worker.postMessage({ type: "close" });
+  gameOverFlag = true; // Set the game over flag to true
+  keyboard = {};
+  clearTimeout(timerId);
   window.location.reload();
 }
 
