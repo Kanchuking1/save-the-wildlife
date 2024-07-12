@@ -509,14 +509,8 @@ function startGame(gameDuration, [boat, turtle], sounds, waternormals) {
 
   // Create a variable to store the remaining time
   remainingTime = gameDuration;
-  var timerDiv = document.createElement("div");
-  timerDiv.style.position = "absolute";
-  timerDiv.style.top = "45px";
-  timerDiv.style.left = "10px";
-  timerDiv.style.color = "white";
-  timerDiv.style.backgroundColor = "rgba(0, 0, 0, 0.5)";
-  timerDiv.innerHTML = "Time: " + remainingTime;
-  document.body.appendChild(timerDiv);
+  var timerFigure = document.querySelector("#time-display");
+  setTimeDisplay(remainingTime)
 
   var versionsDiv = document.createElement("div");
   versionsDiv.style.position = "absolute";
@@ -524,6 +518,7 @@ function startGame(gameDuration, [boat, turtle], sounds, waternormals) {
   versionsDiv.style.right = "10px";
   versionsDiv.style.color = "white";
   versionsDiv.style.backgroundColor = "rgba(0, 0, 0, 0.5)";
+  versionsDiv.style.display = 'none';
   versionsDiv.innerHTML = "Server: " + serverVersion;
   document.body.appendChild(versionsDiv);
 
@@ -534,6 +529,7 @@ function startGame(gameDuration, [boat, turtle], sounds, waternormals) {
   speedElement.style.color = "white";
   speedElement.style.fontSize = "13px";
   speedElement.style.backgroundColor = "rgba(0, 0, 0, 0.5)";
+  speedElement.style.display = 'none';
   speedElement.innerHTML = "Speed: ";
   document.body.appendChild(speedElement);
 
@@ -547,11 +543,14 @@ function startGame(gameDuration, [boat, turtle], sounds, waternormals) {
   instructionsElement.innerHTML = "Arrow Up/W - Accelerate<br/>Arrow Down/S - Brake<br/>Left/A or Right/D - Steer<br/>ESC - Show Menu"
   document.body.appendChild(instructionsElement);
 
+  const inGameOverlay = document.querySelector('.in-game-overlay');
+  inGameOverlay.style.display = 'block';
+
   function updateTimer() {
     if (remainingTime > 0) {
       remainingTime--;
     }
-    timerDiv.innerHTML = "Time: " + remainingTime;
+    setTimeDisplay(remainingTime)
     setTimeout(updateTimer, 1000);
   }
 
@@ -569,6 +568,7 @@ function startGame(gameDuration, [boat, turtle], sounds, waternormals) {
     localScore = 0;
 
     scoreElement.innerHTML = "Score: " + localScore;
+    setScoreDisplay(localScore);
 
     remainingTime = remainingTime;
     timerDiv.innerHTML = "Time: " + remainingTime;
@@ -586,6 +586,8 @@ function startGame(gameDuration, [boat, turtle], sounds, waternormals) {
   scoreElement.style.fontSize = "24px";
   scoreElement.style.backgroundColor = "rgba(0, 0, 0, 0.5)";
   scoreElement.innerHTML = "Score: " + localScore;
+  scoreElement.style.display = 'none';
+
   document.body.appendChild(scoreElement);
 
   const floatAmplitude = 0.1;
@@ -650,6 +652,7 @@ function startGame(gameDuration, [boat, turtle], sounds, waternormals) {
         scene.remove(mesh);
         isMarineLife(mesh.itemType) ? localScore-- : localScore++;
         scoreElement.innerHTML = "Score: " + localScore;
+        setScoreDisplay(localScore);
         delete itemMeshes[key];
       }
     }
@@ -709,6 +712,7 @@ function startGame(gameDuration, [boat, turtle], sounds, waternormals) {
 
     playerSpeed = Math.max(Math.min(playerSpeed, MAX_SPEED), -MAX_SPEED);
     speedElement.innerHTML = `Speed: ${playerSpeed.toFixed(2) * 100}`;
+    setSpeedDisplay(playerSpeed / MAX_SPEED);
 
     const direction = new THREE.Vector3(0, 0, 1).applyQuaternion(
       player.quaternion
@@ -806,6 +810,7 @@ function endGame() {
   scoreOverlay.innerHTML = "Game Over";
   scoreOverlay.innerHTML += "<br>Name: " + playerName;
   scoreOverlay.innerHTML += "<br>Score: " + localScore;
+  setScoreDisplay(localScore);
   document.body.appendChild(scoreOverlay);
 
   // Create a restart button
@@ -827,6 +832,8 @@ function startTimer() {
 
 function resumeGame() {
   document.querySelector(".pause-screen").style.display = "none";
+  const inGameOverlay = document.querySelector('.in-game-overlay');
+  inGameOverlay.style.display = 'block';
   isMenuVisible = false;
 }
 
@@ -840,5 +847,44 @@ function restartGame() {
 
 function toggleMenu() {
   document.querySelector(".pause-screen").style.display = (isMenuVisible)?"none":"block";
+  const inGameOverlay = document.querySelector('.in-game-overlay');
+  inGameOverlay.style.display = 'none';
   isMenuVisible = !isMenuVisible;
+}
+
+function setTimeDisplay(value) {
+  var timerFigure = document.getElementById("time-display")
+  if (timerFigure) {
+    const percent = value / gameDuration * 360;
+    const gradient = `conic-gradient(#307dfc 0deg, #307dfc ${percent}deg, #d1dee5 ${percent}deg, white 360deg)`
+    timerFigure.style.backgroundImage = gradient;
+    const timerText = document.querySelector("#time-display .display")
+    timerText.innerHTML = `${value} sec`;
+  }
+}
+
+let speedSelectorRule = null;
+
+function setSpeedDisplay(value) {
+  if (!speedSelectorRule) {
+    const speedFigure = document.querySelector("#speed-display");
+    if (speedFigure) {
+      const stylesheet = document.styleSheets[0]; 
+      for (let i = 0; i < stylesheet.cssRules.length; i++) {
+        const rule = stylesheet.cssRules[i];
+        if (rule.selectorText === '#speed-display::before') {
+          speedSelectorRule = rule;
+          rule.style.width = `${value * 100}%`;
+          break;
+        }
+      }
+    }
+  } else {
+    speedSelectorRule.style.width = `${value * 100}%`;
+  }
+}
+
+function setScoreDisplay(value) {
+  const speedFigure = document.querySelector("#score-display");
+    speedFigure.innerHTML = value;
 }
